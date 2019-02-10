@@ -10,6 +10,7 @@ class Zuora():
     def __init__(self, client_id, client_secret):
         self.client_id = client_id
         self.client_secret = client_secret
+        self.token = self.zuora_token()
 
     def post(self, url, headers, data):
         req = request.Request(url, headers=headers,
@@ -29,12 +30,19 @@ class Zuora():
         return self.post(url, headers, data)['access_token']
 
     def query_all(self, table, columns=['Id']):
-        self.query(table, columns)
+        first_fetch = self.query(table, columns)
+        records = first_fetch['records']
+        query_locator = first_fetch.get('queryLocator')
+        while query_locator:
+            more_fetch = self.query_more(query_locator)
+            records.extend(more_fetch['records'])
+            query_locator = more_fetch.get('queryLocator')
+        return records
 
     def query(self, table, columns=['Id']):
         columns = ','.join(columns)
         url = 'https://rest.zuora.com/v1/action/query'
-        headers = {'Authorization': f'Bearer {self.zuora_token()}',
+        headers = {'Authorization': f'Bearer {self.token}',
                    'Content-Type': 'application/json'}
         json_data = {'queryString': f'SELECT {columns} FROM {table}'}
         data = json.dumps(json_data).encode('utf-8')
@@ -42,13 +50,13 @@ class Zuora():
 
     def query_more(self, query_locator):
         url = 'https://rest.zuora.com/v1/action/queryMore'
-        headers = {'Authorization': f'Bearer {self.zuora_token()}',
+        headers = {'Authorization': f'Bearer {self.token}',
                    'Content-Type': 'application/json'}
-        data = urlencode({'queryLocator': query_locator})
+        data = json.dumps({'queryLocator': query_locator}).encode('utf-8')
         return self.post(url, headers, data)
 
     def subscriptions(self, columns=['Id']):
-        return self.query(table='Subscription', columns=columns)
+        return self.query_all(table='Subscription', columns=columns)
 
 
 def kms_decrypt(encrypted_txt):
