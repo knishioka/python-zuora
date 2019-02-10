@@ -21,6 +21,10 @@ class Zuora():
         return res_data
 
     def zuora_token(self):
+        """Get zuora token.
+        Returns:
+            str: zuora token.
+        """
         headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         url = 'https://rest.zuora.com/oauth/token'
         raw_data = {'grant_type': 'client_credentials',
@@ -30,6 +34,14 @@ class Zuora():
         return self.post(url, headers, data)['access_token']
 
     def query_all(self, table, columns=['Id']):
+        """Get all data.
+        Args:
+            table (str): table name.
+            columns (:obj:`list` of :obj:`str`): column names list.
+
+        Returns:
+            list of selected data.
+        """
         first_fetch = self.query(table, columns)
         records = first_fetch['records']
         query_locator = first_fetch.get('queryLocator')
@@ -40,6 +52,14 @@ class Zuora():
         return records
 
     def query(self, table, columns=['Id']):
+        """Fetch first 2,000 rows.
+        Args:
+            table (str): table name.
+            columns (:obj:`list` of :obj:`str`): column names list.
+
+        Returns:
+            list of selected data.
+        """
         columns = ','.join(columns)
         url = 'https://rest.zuora.com/v1/action/query'
         headers = {'Authorization': f'Bearer {self.token}',
@@ -49,6 +69,13 @@ class Zuora():
         return self.post(url, headers, data)
 
     def query_more(self, query_locator):
+        """Fetch first 2,000 rows from offset.
+        Args:
+            query_locator (str): where query starts.
+
+        Returns:
+            list of selected data.
+        """
         url = 'https://rest.zuora.com/v1/action/queryMore'
         headers = {'Authorization': f'Bearer {self.token}',
                    'Content-Type': 'application/json'}
@@ -56,6 +83,13 @@ class Zuora():
         return self.post(url, headers, data)
 
     def subscriptions(self, columns=['Id']):
+        """Get subscription data.
+        Args:
+            columns (:obj:`list` of :obj:`str`): column names list.
+
+        Returns:
+            list of selected data.
+        """
         return self.query_all(table='Subscription', columns=columns)
 
 
